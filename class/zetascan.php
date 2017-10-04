@@ -3,7 +3,7 @@
 // Define the API end point and connection details
 defined('ZS_apiURL') or define('ZS_apiURL', 'api.metascan.io');
 defined('ZS_apiProtocol') or define('ZS_apiProtocol', 'https'); // SSL on by default
-defined('ZS_apiMethod') or define('ZS_apiMethod', 'http'); // Method
+defined('ZS_apiMethod') or define('ZS_apiMethod', 'jsonx'); // Method
 defined('ZS_apiVersion') or define('ZS_apiVersion', 'v1'); // Version
 
 // Create the Zetascan class
@@ -57,9 +57,13 @@ if (!class_exists('zetascan')) {
             } else {
 
                 // Generic HTTP methods
-                $res = $this->Get( $this->getUrl($query) );
+                $ch = $this->Get( $this->getUrl($query) );
 
-                $statusCode = curl_getinfo($res, CURLINFO_HTTP_CODE);
+                // Execute the query, fetch the result
+                $res = curl_exec($ch);
+
+                // Lookup the HTTP status code
+                $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
                 if($statusCode == "404") {
                     throw new Exception("Invalid request, check URL not malformed: " . $this->getUrl($query) );
@@ -67,7 +71,7 @@ if (!class_exists('zetascan')) {
                     throw new Exception("Request forbidden, check API key or IP for authorization: " . $this->getUrl($query) );                    
                 } else {
                     // Status 200
-                    $result = $this->parseResult($res);           
+                    $result = $this->parseResult($ch, $res);           
                 }
 
             }
@@ -93,7 +97,7 @@ if (!class_exists('zetascan')) {
                   return $len;
             
                 $name = strtolower(trim($header[0]));
-                if (!array_key_exists($name, $headers))
+                if (!array_key_exists($name, $this->headers))
                   $this->headers[$name] = [trim($header[1])];
                 else
                   $this->headers[$name][] = trim($header[1]);
@@ -102,21 +106,58 @@ if (!class_exists('zetascan')) {
               }
             );
             
-            $res = curl_exec($ch);
+            //$res = curl_exec($ch);
 
-            return $res;
+            return $ch;
 
         }
 
 
+        // Check if the response is listed
+        function isMatch($data) {
+
+            if($data["results"][0]["Found"] == true) {
+                return true;
+            }
+
+            return false;
+
+        }
+            
+        // Check if the response is whitelisted
+        function IsWhiteList($data) {
+
+            if($data["results"][0]["Wl"] == true || $data["results"][0]["Score"] < 0) {
+                return true;
+            }
+
+            return false;
+
+        } 
+            
+        // Check if the response is blacklisted
+        function IsBlackList($data) {
+
+            if($data["results"][0]["Found"] == true && $data["results"][0]["Wl"] == false) {
+                return true;
+            }
+
+            return false;
+
+        }
+
+        function Score($data)   {
+
+            if($data["results"][0]["Found"] == true || $data["results"][0]["Wl"] == true) {
+                return $data["results"][0]["Score"];
+            }
+        }
+
         // Parseresult ( from HTTP methods or DNS, a single format is returned )
-        function parseResult($res)  {
+        function parseResult($ch, $res)  {
 
             // Our 3D array, to parse the result and return
             $data = array(
-                "results" => array(
-                    "0" => array(
-               
                 "Item" => "",
                 "Found" => "",
                 "Score" => "",
@@ -143,20 +184,16 @@ if (!class_exists('zetascan')) {
                         "SourcePort" => "",
                         "Destination" => ""                   
                     )
-
-                )
-                    )
                 )
 
-                );
+            );
                
-
             switch ($this->apiMethod) {
 
                 case "http":
 
                     // If using the HTTP method, retrieve and build our response based on the HTTP status + related headers
-                    $statusCode = curl_getinfo($res, CURLINFO_HTTP_CODE);
+                    $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
                     if($statusCode == "204") {
                         $data["Found"] = false;
@@ -164,21 +201,32 @@ if (!class_exists('zetascan')) {
                         $data["Found"] = true;
                     }
 
-                    $data["Score"] = $this->headers["X-zetascan-Score"];
+                    //var_dump($this->headers);
+
+                    $data["Score"] = $this->headers["x-zetascan-score"][0];
 
                     // Split multiple sources into an array
-                    $data["Sources"] = split(";", $this->headers["X-zetascan-Sources"]);
+                    $data["Sources"] = explode(";", $this->headers["x-zetascan-sources"][0]);
+                    
+                    $wl = $this->headers["x-zetascan-wl"][0];
 
-                    $data["Wldata"] = $this->headers["X-zetascan-Wl"];
-                    $data["Status"] = $this->headers["Success"];
+                    // TODO: Validate correct compared to JSON feed
+                    if($wl == "null") {
+                        $data["Wl"] = false;
+                    } else {
+                        $data["Wl"] = true;
+                        
+                    }
+                    
+                    $data["Status"] = $this->headers["x-zetascan-status"][0];
 
                 break;
 
                 case "text":
 
                     // Read the body and split from the specified API formatting
-                    $head = split(":", $bodyString);
-                    $str = split(",", $head[1]);
+                    $head = explode(":", $bodyString);
+                    $str = explode(",", $head[1]);
 
                     /*
                         http://docs.zetascan.io/?php#http-format
@@ -212,10 +260,18 @@ if (!class_exists('zetascan')) {
 
 
             }
-            return $data;
+
+            $obj = array(
+                "results" => array()
+            );
+
+            $obj["results"][] = $data;
+            //array_push($obj["results"], $data);
+
+            return $obj;
+
+            }
 
         }
-
-
-        }
+   
 }
