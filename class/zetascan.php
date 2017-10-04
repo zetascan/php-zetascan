@@ -1,10 +1,10 @@
 <?php
 
 // Define the API end point and connection details
-defined('ZS_apiURL') or define('ZS_apiURL', 'api.metascan.io');
+defined('ZS_apiURL') or define('ZS_apiURL', 'api.zetascan.com');
 defined('ZS_apiProtocol') or define('ZS_apiProtocol', 'https'); // SSL on by default
-defined('ZS_apiMethod') or define('ZS_apiMethod', 'jsonx'); // Method
-defined('ZS_apiVersion') or define('ZS_apiVersion', 'v1'); // Version
+defined('ZS_apiMethod') or define('ZS_apiMethod', 'http'); // Method
+defined('ZS_apiVersion') or define('ZS_apiVersion', 'v2'); // Version
 
 // Create the Zetascan class
 if (!class_exists('zetascan')) {
