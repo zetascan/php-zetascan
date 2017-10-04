@@ -9,9 +9,9 @@ The [Zetascan Query Services](https://zetascan.com/) "ZQS" was created to facili
 
 * The absence of normalized meta-data related to the IPs or Domains.
 
-Because of the above, many developers asked if we could do something to reduce the complexity related to accessing and using threat data as part of their applications - MQS is our solution. We are introducing a more elegant API for developers, with an affordable pricing model to match.
+Because of the above, many developers asked if we could do something to reduce the complexity related to accessing and using threat data as part of their applications - ZQS is our solution. We are introducing a more elegant API for developers, with an affordable pricing model to match.
 
-To start, [signup for a developer key](https://zetascan.com/signup/?lang=en) and begin to integrate MQS into your web-apps and mobile applications.
+To start, [signup for a developer key](https://zetascan.com/signup/?lang=en) and begin to integrate ZQS into your web-apps and mobile applications.
 
 ## php-zetascan 
 
