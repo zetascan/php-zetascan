@@ -262,10 +262,11 @@ if (!class_exists('zetascan')) {
 
             }
 
+            // Return the JSON response
             if($this->apiMethod == "json" || $this->apiMethod == "jsonx") {
-                print_r($data);
                 return $data;
 
+            // If using the text or HTTP format, return the same array as JSON used 
             } else {
                 $obj = array(
                     "results" => array()
