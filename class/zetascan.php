@@ -116,7 +116,7 @@ if (!class_exists('zetascan')) {
         // Check if the response is listed
         function isMatch($data) {
 
-            if($data["results"][0]["Found"] == true) {
+            if($data["results"][0]["found"] == true) {
                 return true;
             }
 
@@ -127,7 +127,7 @@ if (!class_exists('zetascan')) {
         // Check if the response is whitelisted
         function IsWhiteList($data) {
 
-            if($data["results"][0]["Wl"] == true || $data["results"][0]["Score"] < 0) {
+            if($data["results"][0]["wl"] == true || $data["results"][0]["score"] < 0) {
                 return true;
             }
 
@@ -138,7 +138,7 @@ if (!class_exists('zetascan')) {
         // Check if the response is blacklisted
         function IsBlackList($data) {
 
-            if($data["results"][0]["Found"] == true && $data["results"][0]["Wl"] == false) {
+            if($data["results"][0]["found"] == true && $data["results"][0]["wl"] == false) {
                 return true;
             }
 
@@ -148,8 +148,8 @@ if (!class_exists('zetascan')) {
 
         function Score($data)   {
 
-            if($data["results"][0]["Found"] == true || $data["results"][0]["Wl"] == true) {
-                return $data["results"][0]["Score"];
+            if($data["results"][0]["found"] == true || $data["results"][0]["wl"] == true) {
+                return $data["results"][0]["score"];
             }
         }
 
@@ -158,31 +158,31 @@ if (!class_exists('zetascan')) {
 
             // Our 3D array, to parse the result and return
             $data = array(
-                "Item" => "",
-                "Found" => "",
-                "Score" => "",
-                "FromSubnet" => "",
-                "Sources" => "",
-                "Wl" => "",
-                "Wldata" => "",
+                "item" => "",
+                "found" => "",
+                "score" => "",
+                "fromsubnet" => "",
+                "sources" => "",
+                "wl" => "",
+                "wldata" => "",
 
-                "Extended" => array(
-                    "ASNum" => "",
-                    "Route" => "",
-                    "Country" => "",
-                    "Domain" => "",
-                    "State" => "",
-                    "Time" => "",
+                "extended" => array(
+                    "asnum" => "",
+                    "route" => "",
+                    "country" => "",
+                    "domain" => "",
+                    "state" => "",
+                    "time" => "",
 
-                    "Reason" => array(
-                        "Class" => "",
-                        "Rule" => "",
-                        "Type" => "",
-                        "Name" => "",
-                        "Source" => "",
-                        "Port" => "",
-                        "SourcePort" => "",
-                        "Destination" => ""                   
+                    "reason" => array(
+                        "class" => "",
+                        "rule" => "",
+                        "type" => "",
+                        "name" => "",
+                        "source" => "",
+                        "port" => "",
+                        "sourceport" => "",
+                        "destination" => ""                   
                     )
                 )
 
@@ -196,36 +196,36 @@ if (!class_exists('zetascan')) {
                     $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
                     if($statusCode == "204") {
-                        $data["Found"] = false;
+                        $data["found"] = false;
                     } else {
-                        $data["Found"] = true;
+                        $data["found"] = true;
                     }
 
                     //var_dump($this->headers);
 
-                    $data["Score"] = $this->headers["x-zetascan-score"][0];
+                    $data["score"] = $this->headers["x-zetascan-score"][0];
 
                     // Split multiple sources into an array
-                    $data["Sources"] = explode(";", $this->headers["x-zetascan-sources"][0]);
+                    $data["sources"] = explode(";", $this->headers["x-zetascan-sources"][0]);
                     
                     $wl = $this->headers["x-zetascan-wl"][0];
 
                     // TODO: Validate correct compared to JSON feed
                     if($wl == "null") {
-                        $data["Wl"] = false;
+                        $data["wl"] = false;
                     } else {
-                        $data["Wl"] = true;
+                        $data["wl"] = true;
                         
                     }
                     
-                    $data["Status"] = $this->headers["x-zetascan-status"][0];
+                    $data["status"] = $this->headers["x-zetascan-status"][0];
 
                 break;
 
                 case "text":
-
+                
                     // Read the body and split from the specified API formatting
-                    $head = explode(":", $bodyString);
+                    $head = explode(":", $res);
                     $str = explode(",", $head[1]);
 
                     /*
@@ -241,34 +241,40 @@ if (!class_exists('zetascan')) {
                     */
                     
                     if ($str[0] == "true") {
-                        $data["Found"] = true;
+                        $data["found"] = true;
                     } else {
-                        $data["Found"] = false;
+                        $data["found"] = false;
                     }
 
-                    $data["Score"] = $str[3];
+                    $data["score"] = $str[3];
 
                 break;
 
                 case "json":
                 case "jsonx":
-                    echo $res;
+
                     // Matches our existing $data array
                     $data = json_decode($res, true);
+                    
 
                 break;
 
 
             }
 
-            $obj = array(
-                "results" => array()
-            );
+            if($this->apiMethod == "json" || $this->apiMethod == "jsonx") {
+                print_r($data);
+                return $data;
 
-            $obj["results"][] = $data;
-            //array_push($obj["results"], $data);
-
-            return $obj;
+            } else {
+                $obj = array(
+                    "results" => array()
+                );
+    
+                $obj["results"][] = $data;
+    
+                return $obj;    
+            }
 
             }
 

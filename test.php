@@ -14,7 +14,7 @@ $response = $zs->Query("baddomain.org");
 
 if($zs->IsBlackList($response)) {
     echo "baddomain.org matches a black-list!\n";
-    echo "Score => " . $response["results"][0]["Score"];
+    echo "Score => " . $response["results"][0]["score"];
 }
 
 echo "\n\n";
